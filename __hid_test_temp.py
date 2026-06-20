@@ -1,7 +1,35 @@
-import hid
+"""
+Dump method names and string references from the MINI KeyBoard .NET assembly.
+Focus on HID-related methods to find the protocol command bytes.
+"""
+import dnfile
 import sys
-import time
 sys.stdout.reconfigure(encoding='utf-8')
+
+EXE = r'c:\Users\Haytham\Documents\Coding Projects\macroPadProgrammer\Release\MINI KeyBoard.exe'
+
+dn = dnfile.dnPE(EXE)
+
+# ---- Dump all user strings by scanning offsets ----
+print("=== User strings ===")
+us = dn.net.user_strings
+offset = 1
+while offset < us.sizeof():
+    try:
+        val, size = us.get_with_size(offset)
+        if val and len(val.strip()) > 1:
+            print(f"  [offset={offset}] {repr(val.strip())}")
+        offset += size if size > 0 else 1
+    except Exception:
+        offset += 1
+
+# ---- Dump all method definitions ----
+print("\n=== Method definitions ===")
+if dn.net and dn.net.mdtable:
+    method_table = dn.net.mdtable.MethodDef
+    if method_table and method_table.rows:
+        for row in method_table.rows:
+            print(f"  {row.Name}")
 
 PATH = b'\\\\?\\HID#VID_258A&PID_010D&MI_01&Col03#b&17ceb4e7&0&0002#{4d1e55b2-f16f-11cf-88cb-001111000030}'
 
